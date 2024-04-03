@@ -64,10 +64,11 @@ void SystemImpl::init(uint8_t system_id, uint8_t comp_id)
         [this](const mavlink_message_t& message) { process_heartbeat(message); },
         this);
 
-    _mavlink_message_handler.register_one(
-        MAVLINK_MSG_ID_STATUSTEXT,
-        [this](const mavlink_message_t& message) { process_statustext(message); },
-        this);
+// TODO, OLSLO, temporarily disable status text
+    //    _mavlink_message_handler.register_one(
+//        MAVLINK_MSG_ID_STATUSTEXT,
+//        [this](const mavlink_message_t& message) { process_statustext(message); },
+//        this);
 
     _mavlink_message_handler.register_one(
         MAVLINK_MSG_ID_AUTOPILOT_VERSION,
@@ -562,6 +563,9 @@ void SystemImpl::set_connected()
         if (!_connected) {
             if (!_components.empty()) {
                 LogDebug() << "Discovered " << _components.size() << " component(s)";
+                for (auto &component : _components) {
+                  LogDebug() << "Component: " << std::to_string(component);
+                }
             }
 
             _connected = true;
