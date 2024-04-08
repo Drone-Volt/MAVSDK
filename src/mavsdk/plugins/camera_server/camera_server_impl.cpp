@@ -981,21 +981,7 @@ std::optional<mavlink_command_ack_t> CameraServerImpl::process_camera_informatio
 
     LogDebug() << "command.origin_system_id :" << std::to_string(static_cast<unsigned int>(command.origin_system_id));
     LogDebug() << "command.origin_component_id :" << std::to_string(static_cast<unsigned int>(command.origin_component_id));
-
-    if (command.target_system_id != 0 && command.target_system_id != _server_component_impl->get_own_system_id()) {
-      LogWarn() << "Skipping cmd. target_system_id["
-      << std::to_string(static_cast<unsigned int>(command.target_system_id)) << "] != own_system_id["
-      << std::to_string(static_cast<unsigned int>(_server_component_impl->get_own_system_id())) << "]";
-      return std::nullopt;
-    }
-
-    if (command.target_component_id != 0 && command.target_component_id != _server_component_impl->get_own_component_id()) {
-      LogDebug() << "Skipping cmd. target_component_id["
-      << std::to_string(static_cast<unsigned int>(command.target_component_id)) << "] != own_component_id["
-      << std::to_string(static_cast<unsigned int>(_server_component_impl->get_own_component_id())) << "]";
-      return std::nullopt;
-    }
-
+    
     auto capabilities = static_cast<bool>(command.params.param1);
 
     if (!capabilities) {
