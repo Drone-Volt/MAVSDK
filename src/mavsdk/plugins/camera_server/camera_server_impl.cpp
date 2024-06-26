@@ -1594,31 +1594,92 @@ std::optional<mavlink_command_ack_t> CameraServerImpl::process_video_stream_info
         _server_component_impl->send_command_ack(command_ack);
         LogDebug() << "sent video streaming ack";
 
-        const char name[32] = "";
-
+        const std::string stream_name {"noname"};
         _video_streaming.rtsp_uri.resize(sizeof(mavlink_video_stream_information_t::uri));
 
-        mavlink_message_t msg{};
-        mavlink_msg_video_stream_information_pack(
+        auto to_larger_c_array = [](const std::string &str, auto arr, std::size_t arr_size) {
+          for (std::size_t i = 0; i < arr_size; i++) {
+            if (i < str.size()) {
+              arr[i] = str.at(i);
+            } else {
+              arr[i] = 0;
+            }
+          }
+        };
+
+        auto to_larger_array = [to_larger_c_array](const std::string &str, auto arr) {
+          to_larger_c_array(str, arr, arr.size());
+        };
+
+
+        mavlink_video_stream_information_t info;
+
+        info.framerate = 30.0; /*< [Hz] Frame rate.*/
+        info.bitrate = 100000; /*< [bits/s] Bit rate.*/
+        info.flags = VIDEO_STREAM_STATUS_FLAGS_RUNNING; /*<  Bitmap of stream status flags.*/
+        info.resolution_h = 1080; /*< [pix] Horizontal resolution.*/
+        info.resolution_v = 1920; /*< [pix] Vertical resolution.*/
+        info.rotation = 0; /*< [deg] Video image rotation clockwise.*/
+        info.hfov = 90; /*< [deg] Horizontal Field of view.*/
+        info.stream_id = 0; /*<  Video Stream ID (1 for first, 2 for second, etc.)*/
+        info.count = 0; /*<  Number of streams available.*/
+        info.type = VIDEO_STREAM_TYPE_RTSP; /*<  Type of stream.*/
+        to_larger_c_array(stream_name, info.name, 32); /*<  Stream name.*/
+        to_larger_c_array(_video_streaming.rtsp_uri, info.uri, 160);
+
+        mavlink_message_t info_msg{};
+        mavlink_msg_video_stream_information_encode(
             _server_component_impl->get_own_system_id(),
             _server_component_impl->get_own_component_id(),
-            &msg,
-            0, // Stream id
-            0, // Count
-            VIDEO_STREAM_TYPE_RTSP,
-            VIDEO_STREAM_STATUS_FLAGS_RUNNING,
-            0, // famerate
-            0, // resolution horizontal
-            0, // resolution vertical
-            0, // bitrate
-            0, // rotation
-            0, // horizontal field of view
-            name,
-            _video_streaming.rtsp_uri.c_str());
+            &info_msg,
+            &info
+        );
 
-        _server_component_impl->send_message(msg);
+        _server_component_impl->send_message(info_msg);
+        LogDebug() << "sent video streaming info";
 
-        // Ack already sent.
+        // HACK: some remote control (i.e. herelink) do not expect the standard
+        // streaming messages. Use a tunnel message with a video stream information
+        // encoded inside.
+        mavlink_message_t tunnel_msg {};
+
+        struct video_stream_information_payload_t {
+          std::uint32_t msgId;
+          std::int32_t streamId;
+          std::uint32_t count;
+          std::uint32_t type;
+          std::uint32_t flags;
+          std::float_t framerate;
+          std::uint32_t resolutionH;
+          std::uint32_t resolutionV;
+          std::uint8_t name[32];
+          std::uint8_t uri[64];
+        } __attribute__((packed)) info_payload;
+
+      info_payload.msgId = MAVLINK_MSG_ID_VIDEO_STREAM_INFORMATION;
+      info_payload.streamId = info.stream_id;
+      info_payload.count = info.count;
+      info_payload.type = info.type;
+      info_payload.flags = info.flags;
+      info_payload.framerate = info.framerate;
+      info_payload.resolutionH = info.resolution_h;
+      info_payload.resolutionV = info.resolution_v;
+      to_larger_c_array(stream_name, info_payload.name, 32);
+      to_larger_c_array(_video_streaming.rtsp_uri, info_payload.uri, 64);
+
+      mavlink_msg_tunnel_pack(
+          _server_component_impl->get_own_system_id(),
+          _server_component_impl->get_own_component_id(),
+          &tunnel_msg, command.origin_system_id, command.origin_component_id,
+          MAV_TUNNEL_PAYLOAD_TYPE_UNKNOWN,
+          sizeof(info_payload),
+          reinterpret_cast<const uint8_t *>(&info_payload)
+          );
+      LogDebug() << "pre sent video streaming info tunnel";
+      _server_component_impl->send_message(tunnel_msg);
+      LogDebug() << "sent video streaming info tunnel";
+
+      // Ack already sent.
         return std::nullopt;
 
     } else {
