@@ -1607,11 +1607,6 @@ std::optional<mavlink_command_ack_t> CameraServerImpl::process_video_stream_info
           }
         };
 
-        auto to_larger_array = [to_larger_c_array](const std::string &str, auto arr) {
-          to_larger_c_array(str, arr, arr.size());
-        };
-
-
         mavlink_video_stream_information_t info;
 
         info.framerate = 30.0; /*< [Hz] Frame rate.*/
