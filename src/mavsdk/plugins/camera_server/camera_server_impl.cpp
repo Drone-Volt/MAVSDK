@@ -1637,7 +1637,10 @@ std::optional<mavlink_command_ack_t> CameraServerImpl::process_video_stream_info
         );
 
         _server_component_impl->send_message(info_msg);
-        LogDebug() << "sent video streaming info";
+
+        std::string ensure_uri = info.uri;
+
+        LogDebug() << "Sent video streaming info with rtsp uri: " << ensure_uri << "\n";
 
         // HACK: some remote control (i.e. herelink) do not expect the standard
         // streaming messages. Use a tunnel message with a video stream information
