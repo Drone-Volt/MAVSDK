@@ -183,6 +183,8 @@ private:
     std::optional<mavlink_command_ack_t>
     process_video_stream_information_request(const MavlinkCommandReceiver::CommandLong& command);
     std::optional<mavlink_command_ack_t>
+    process_message_request(const MavlinkCommandReceiver::CommandLong& command);
+    std::optional<mavlink_command_ack_t>
     process_video_stream_status_request(const MavlinkCommandReceiver::CommandLong& command);
     std::optional<mavlink_command_ack_t>
     process_track_point_command(const MavlinkCommandReceiver::CommandLong& command);

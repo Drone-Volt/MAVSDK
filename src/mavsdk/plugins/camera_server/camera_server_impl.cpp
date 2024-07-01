@@ -129,6 +129,12 @@ void CameraServerImpl::init()
         },
         this);
     _server_component_impl->register_mavlink_command_handler(
+        MAV_CMD_REQUEST_MESSAGE,
+        [this](const MavlinkCommandReceiver::CommandLong& command) {
+            return process_message_request(command);
+        },
+        this);
+    _server_component_impl->register_mavlink_command_handler(
         MAV_CMD_REQUEST_VIDEO_STREAM_STATUS,
         [this](const MavlinkCommandReceiver::CommandLong& command) {
             return process_video_stream_status_request(command);
@@ -1682,6 +1688,24 @@ std::optional<mavlink_command_ack_t> CameraServerImpl::process_video_stream_info
             command, MAV_RESULT::MAV_RESULT_UNSUPPORTED);
     }
 }
+
+std::optional<mavlink_command_ack_t> CameraServerImpl::process_message_request(
+    const MavlinkCommandReceiver::CommandLong& command)
+{
+  auto requested_message_id = static_cast<std::uint32_t>(command.params.param1);
+
+  LogDebug() << "Processing message request: " << requested_message_id;
+
+  switch (requested_message_id) {
+    case (MAVLINK_MSG_ID_CAMERA_INFORMATION): { return process_camera_information_request(command); }
+    case (MAVLINK_MSG_ID_VIDEO_STREAM_INFORMATION): { return process_video_stream_information_request(command); }
+    default: {
+      LogWarn() << "Message requested with ID: " << requested_message_id << " will not be sent.";
+      return {};
+    }
+  }
+}
+
 
 std::optional<mavlink_command_ack_t> CameraServerImpl::process_video_stream_status_request(
     const MavlinkCommandReceiver::CommandLong& command)
