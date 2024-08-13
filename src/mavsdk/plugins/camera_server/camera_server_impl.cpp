@@ -1616,10 +1616,10 @@ std::optional<mavlink_command_ack_t> CameraServerImpl::process_video_stream_info
         mavlink_video_stream_information_t info;
 
         info.framerate = 30.0; /*< [Hz] Frame rate.*/
-        info.bitrate = 100000; /*< [bits/s] Bit rate.*/
+        info.bitrate = 2000000; /*< [bits/s] Bit rate.*/
         info.flags = VIDEO_STREAM_STATUS_FLAGS_RUNNING; /*<  Bitmap of stream status flags.*/
-        info.resolution_h = 1080; /*< [pix] Horizontal resolution.*/
-        info.resolution_v = 1920; /*< [pix] Vertical resolution.*/
+        info.resolution_h = 1280; /*< [pix] Horizontal resolution.*/
+        info.resolution_v = 720; /*< [pix] Vertical resolution.*/
         info.rotation = 0; /*< [deg] Video image rotation clockwise.*/
         info.hfov = 90; /*< [deg] Horizontal Field of view.*/
         info.stream_id = 0; /*<  Video Stream ID (1 for first, 2 for second, etc.)*/
